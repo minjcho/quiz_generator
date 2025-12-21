@@ -8,15 +8,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Create non-root user first
+RUN useradd --create-home appuser
+
 # Copy requirements and install (non-editable for production)
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir .
 
-# Copy application
-COPY app ./app
+# Copy application with correct ownership
+COPY --chown=appuser:appuser app ./app
 
-# Create non-root user
-RUN useradd --create-home appuser
 USER appuser
 
 EXPOSE 8000
