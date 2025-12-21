@@ -51,9 +51,9 @@ export default function NewDocumentPage() {
 
     try {
       await documentApi.create({
-        title: title.trim(),
+        title: title.trim() || (sourceType === 'url' ? sourceUrl.trim() : ''),
         source_type: sourceType,
-        content_text: sourceType === 'url' ? `URL: ${sourceUrl}` : contentText.trim(),
+        content_text: sourceType === 'url' ? '' : contentText.trim(),
         source_url: sourceType === 'url' ? sourceUrl.trim() : undefined,
       });
 
@@ -182,7 +182,7 @@ export default function NewDocumentPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      등록 중...
+                      {sourceType === 'url' ? '웹 페이지 분석 중...' : '등록 중...'}
                     </>
                   ) : (
                     '자료 등록'

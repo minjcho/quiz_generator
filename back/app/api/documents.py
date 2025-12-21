@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from app.core.auth import get_current_user_id
 from app.services.document_service import document_service
+from app.services.url_crawler import url_crawler_service
 
 router = APIRouter()
 
@@ -37,10 +38,24 @@ async def create_document(
 ):
     """문서 생성"""
 
+    content_text = document.content_text
+    title = document.title
+
+    # URL 타입인 경우 웹 페이지에서 본문 추출
+    if document.source_type == "url" and document.source_url:
+        try:
+            crawl_result = await url_crawler_service.extract_content(document.source_url)
+            content_text = crawl_result["text"]
+            # 제목이 비어있으면 크롤링된 제목 사용
+            if not title.strip() or title == document.source_url:
+                title = crawl_result["title"] or document.source_url
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
     result = await document_service.create(
         user_id=user_id,
-        title=document.title,
-        content_text=document.content_text,
+        title=title,
+        content_text=content_text,
         source_type=document.source_type,
         source_url=document.source_url,
     )
