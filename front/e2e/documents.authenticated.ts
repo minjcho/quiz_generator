@@ -118,28 +118,40 @@ test.describe('문서 관리 (인증됨)', () => {
     await page.goto('/documents');
     await page.waitForLoadState('networkidle');
 
-    // E2E 테스트 문서 찾기
-    const documentCard = page.locator('text=E2E 테스트 문서').first();
-    const isDocumentExists = await documentCard.isVisible({ timeout: 3000 }).catch(() => false);
+    // E2E 테스트 문서 모두 삭제 (누적 방지)
+    let deletedCount = 0;
+    const maxDeleteAttempts = 10; // 안전장치
 
-    if (!isDocumentExists) {
-      test.skip(true, '삭제할 테스트 문서가 없습니다');
-      return;
-    }
+    while (deletedCount < maxDeleteAttempts) {
+      // E2E 테스트 문서 찾기
+      const documentCard = page.locator('text=E2E 테스트 문서').first();
+      const isDocumentExists = await documentCard.isVisible({ timeout: 2000 }).catch(() => false);
 
-    // 삭제 버튼 클릭 (문서 카드 내의 삭제 버튼)
-    const deleteButton = page.locator('[data-testid="delete-document"]').first();
-    if (await deleteButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await deleteButton.click();
-
-      // 확인 다이얼로그가 있으면 확인
-      const confirmButton = page.getByRole('button', { name: /확인|삭제/i });
-      if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await confirmButton.click();
+      if (!isDocumentExists) {
+        break; // 더 이상 삭제할 문서 없음
       }
 
-      // 삭제 후 페이지 새로고침
-      await page.waitForLoadState('networkidle');
+      // 삭제 버튼 클릭 (문서 카드 내의 삭제 버튼)
+      const deleteButton = page.locator('[data-testid="delete-document"]').first();
+      if (await deleteButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await deleteButton.click();
+
+        // 확인 다이얼로그가 있으면 확인
+        const confirmButton = page.getByRole('button', { name: /확인|삭제/i });
+        if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await confirmButton.click();
+        }
+
+        // 삭제 완료 대기
+        await page.waitForLoadState('networkidle');
+        deletedCount++;
+      } else {
+        break;
+      }
+    }
+
+    if (deletedCount === 0) {
+      test.skip(true, '삭제할 테스트 문서가 없습니다');
     }
   });
 });

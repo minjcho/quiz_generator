@@ -99,11 +99,10 @@ test.describe('퀴즈 풀이 (인증됨)', () => {
     const nextButton = page.getByRole('button', { name: /다음/i });
     if (await nextButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await nextButton.click();
-      await page.waitForTimeout(500);
 
-      // 이전 버튼이 활성화되어야 함
+      // 이전 버튼이 활성화될 때까지 대기
       const prevButton = page.getByRole('button', { name: /이전/i });
-      await expect(prevButton).toBeEnabled();
+      await expect(prevButton).toBeEnabled({ timeout: 5000 });
     }
   });
 
@@ -138,7 +137,6 @@ test.describe('퀴즈 풀이 (인증됨)', () => {
 
       if (radioCount > 0) {
         await radioButtons.first().click();
-        await page.waitForTimeout(300);
       }
 
       // 다음 또는 제출 버튼 확인
@@ -152,7 +150,8 @@ test.describe('퀴즈 풀이 (인증됨)', () => {
       } else if (await nextButton.isVisible({ timeout: 1000 }).catch(() => false)) {
         // 다음 문제로 이동
         await nextButton.click();
-        await page.waitForTimeout(300);
+        // 다음 문제 로드 대기
+        await page.waitForLoadState('domcontentloaded');
       } else {
         hasMoreQuestions = false;
       }
@@ -160,7 +159,6 @@ test.describe('퀴즈 풀이 (인증됨)', () => {
 
     // 결과 페이지 확인
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
 
     // 결과 페이지의 "퀴즈 결과" 제목 또는 점수 표시 확인
     const resultTitle = page.getByText('퀴즈 결과');
@@ -226,14 +224,13 @@ test.describe('퀴즈 풀이 (인증됨)', () => {
       const nextButton = page.getByRole('button', { name: /다음/i });
       if (await nextButton.isVisible({ timeout: 500 }).catch(() => false)) {
         await nextButton.click();
-        await page.waitForTimeout(200);
+        await page.waitForLoadState('domcontentloaded');
       } else {
         break;
       }
     }
 
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
 
     // 결과 페이지인지 확인
     const resultTitle = page.getByText('퀴즈 결과');
@@ -251,18 +248,17 @@ test.describe('퀴즈 풀이 (인증됨)', () => {
     if (buttonCount > 1) {
       // 두 번째 문제로 이동
       await questionButtons.nth(1).click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('domcontentloaded');
 
       // 첫 번째 문제로 돌아가기
       await questionButtons.first().click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('domcontentloaded');
     }
 
     // 다시 풀기 버튼 클릭 시 초기화 확인
     const retryButton = page.getByRole('button', { name: /다시 풀기/i });
     if (await retryButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await retryButton.click();
-      await page.waitForTimeout(500);
 
       // 다시 풀기 후 라디오 버튼이 보여야 함
       const radioGroup = page.locator('[role="radiogroup"]');

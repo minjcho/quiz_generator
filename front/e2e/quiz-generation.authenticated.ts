@@ -37,8 +37,8 @@ test.describe('퀴즈 생성 (인증됨)', () => {
 
     if (isVisible) {
       await documentSelect.click();
-      // 옵션이 있는지 확인 (테스트 환경에 따라 다름)
-      await page.waitForTimeout(500);
+      // 옵션 로드 대기
+      await page.waitForLoadState('domcontentloaded');
     }
   });
 
@@ -92,9 +92,8 @@ test.describe('퀴즈 생성 (인증됨)', () => {
     // 1. 문서 선택 (첫 번째 문서)
     const documentSelect = page.getByRole('combobox').first();
     await documentSelect.click();
-    await page.waitForTimeout(500);
 
-    // 첫 번째 옵션 선택
+    // 첫 번째 옵션 선택 (옵션이 나타날 때까지 대기)
     const firstOption = page.getByRole('option').first();
     const hasOptions = await firstOption.isVisible({ timeout: 2000 }).catch(() => false);
     if (!hasOptions) {
