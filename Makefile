@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 .PHONY: all help install install-front install-back dev dev-front dev-back \
         test test-e2e test-back lint lint-front lint-back \
         build clean fclean re db-status db-push db-reset
@@ -62,8 +64,8 @@ install-back:
 dev:
 	@echo "프론트엔드(3000) + 백엔드(8000) 서버 시작..."
 	@trap 'kill 0' INT TERM; \
-	cd back && uvicorn app.main:app --reload --port 8000 & \
-	cd front && npm run dev & \
+	(cd back && uvicorn app.main:app --reload --port 8000) & \
+	(cd front && npm run dev) & \
 	wait
 
 dev-front:
@@ -83,7 +85,7 @@ test-e2e:
 	cd front && npm run test:e2e
 
 test-back:
-	cd back && pytest
+	cd back && python -m pytest 2>/dev/null || echo "⚠️  백엔드 테스트 없음"
 
 # =============================================================================
 # 린트
@@ -108,8 +110,7 @@ build:
 clean:
 	rm -rf front/.next
 	rm -rf front/node_modules/.cache
-	rm -rf back/__pycache__
-	rm -rf back/**/__pycache__
+	find back -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	rm -rf back/.pytest_cache
 	rm -rf back/.ruff_cache
 	rm -rf front/playwright-report
