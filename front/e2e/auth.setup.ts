@@ -21,10 +21,7 @@ setup('authenticate', async ({ page }) => {
   if (!testEmail || !testPassword) {
     console.log('⚠️ TEST_USER_EMAIL/TEST_USER_PASSWORD 환경변수가 없습니다.');
     console.log('⚠️ 인증 테스트를 건너뜁니다.');
-
-    // 빈 storage state 저장
-    await page.goto('/');
-    await page.context().storageState({ path: authFile });
+    setup.skip();
     return;
   }
 

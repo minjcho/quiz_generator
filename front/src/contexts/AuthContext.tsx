@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import { validateAuthInput } from '@/lib/utils';
 
 interface AuthContextType {
   user: User | null;
@@ -65,15 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    // 입력 유효성 검사
-    if (!email || !password) {
-      throw new Error('이메일과 비밀번호를 입력해주세요.');
-    }
-
-    // 이메일 형식 검사
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new Error('올바른 이메일 형식이 아닙니다.');
+    const validationError = validateAuthInput(email, password, false);
+    if (validationError) {
+      throw new Error(validationError);
     }
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -83,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       console.error('이메일 로그인 오류:', error.message);
-      // 에러 메시지 구체화
       if (error.message.includes('Invalid login credentials')) {
         throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
       }
@@ -92,20 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
-    // 입력 유효성 검사
-    if (!email || !password) {
-      throw new Error('이메일과 비밀번호를 입력해주세요.');
-    }
-
-    // 이메일 형식 검사
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      throw new Error('올바른 이메일 형식이 아닙니다.');
-    }
-
-    // 비밀번호 강도 검사
-    if (password.length < 6) {
-      throw new Error('비밀번호는 최소 6자 이상이어야 합니다.');
+    const validationError = validateAuthInput(email, password, true);
+    if (validationError) {
+      throw new Error(validationError);
     }
 
     const { error } = await supabase.auth.signUp({

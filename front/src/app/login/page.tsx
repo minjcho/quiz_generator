@@ -42,6 +42,8 @@ export default function LoginPage() {
 
     try {
       await signInWithEmail(email, password);
+      // 로그인 성공 시 즉시 리다이렉트
+      router.push(redirectTo);
     } catch (err) {
       // 에러 메시지 그대로 표시 (AuthContext에서 구체화된 메시지 사용)
       if (err instanceof Error) {
@@ -49,6 +51,8 @@ export default function LoginPage() {
       } else {
         setLoginError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
       }
+      // 보안을 위해 비밀번호 초기화
+      setPassword('');
       console.error('로그인 실패:', err);
     } finally {
       setIsSubmitting(false);
