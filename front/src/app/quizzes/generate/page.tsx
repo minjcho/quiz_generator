@@ -154,7 +154,7 @@ function GenerateQuizContent() {
                 onValueChange={(value) => setQuestionCount(parseInt(value))}
                 disabled={isGenerating}
               >
-                <SelectTrigger>
+                <SelectTrigger data-testid="question-count-select">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

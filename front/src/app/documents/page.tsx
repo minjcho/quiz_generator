@@ -170,6 +170,7 @@ export default function DocumentsPage() {
                       onClick={() => handleDelete(doc.id)}
                       disabled={deletingId === doc.id}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      data-testid="delete-document"
                     >
                       {deletingId === doc.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
