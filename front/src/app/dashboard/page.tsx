@@ -23,28 +23,43 @@ export default function DashboardPage() {
     averageScore: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const loadStats = async () => {
       try {
+        setError(null);
         const [documents, quizzesResponse] = await Promise.all([
           documentApi.getAll(),
           quizApi.getAll(),
         ]);
 
-        setStats({
-          documentCount: documents.length,
-          quizCount: quizzesResponse.quizzes.length,
-          averageScore: 0, // TODO: Calculate from attempts
-        });
-      } catch (error) {
-        console.error('Failed to load stats:', error);
+        if (mounted) {
+          setStats({
+            documentCount: documents.length,
+            quizCount: quizzesResponse.quizzes.length,
+            averageScore: 0, // TODO: Calculate from attempts
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+        if (mounted) {
+          setError('통계를 불러오는데 실패했습니다.');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadStats();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -125,7 +140,11 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {error ? (
+              <div className="text-center py-8 text-red-600">
+                {error}
+              </div>
+            ) : loading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
               </div>
@@ -137,10 +156,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <p className="text-3xl font-bold text-green-600">{stats.quizCount}</p>
-                  <p className="text-sm text-gray-600">완료한 퀴즈</p>
+                  <p className="text-sm text-gray-600">생성된 퀴즈</p>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-3xl font-bold text-purple-600">{stats.averageScore}%</p>
+                  <p className="text-3xl font-bold text-purple-600">-</p>
                   <p className="text-sm text-gray-600">평균 정답률</p>
                 </div>
               </div>
