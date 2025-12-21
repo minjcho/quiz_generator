@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
 import path from 'path';
+
+// Load root .env file
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const authFile = path.join(__dirname, '.playwright/.auth/user.json');
 

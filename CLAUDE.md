@@ -15,23 +15,27 @@ ai3/
 │   │   ├── components/
 │   │   │   ├── ui/           # shadcn/ui 컴포넌트
 │   │   │   └── quiz/         # 퀴즈 관련 컴포넌트
+│   │   ├── contexts/         # React Context (Auth 등)
 │   │   ├── types/            # TypeScript 타입
-│   │   └── lib/              # 유틸리티
+│   │   └── lib/              # 유틸리티 (API, Supabase)
+│   ├── Dockerfile
 │   └── package.json
 │
 ├── back/                     # FastAPI 백엔드
 │   ├── app/
 │   │   ├── main.py           # FastAPI 앱 진입점
-│   │   ├── core/             # 설정
+│   │   ├── core/             # 설정, Auth, Supabase 클라이언트
 │   │   ├── api/              # API 라우터
 │   │   ├── agents/           # LangGraph 에이전트
 │   │   ├── schemas/          # Pydantic 스키마
-│   │   └── services/         # 비즈니스 로직
-│   ├── pyproject.toml
-│   └── .env
+│   │   └── services/         # 비즈니스 로직 (CRUD)
+│   ├── Dockerfile
+│   └── pyproject.toml
 │
-├── .env                      # 루트 환경변수
+├── .env                      # 환경변수 (통합)
 ├── .env.example              # 환경변수 템플릿
+├── docker-compose.yml        # Docker 통합 실행
+├── Makefile                  # 개발/배포 명령어
 ├── .gitignore
 └── CLAUDE.md
 ```
@@ -63,24 +67,34 @@ cd front && npm run dev
 cd back && uvicorn app.main:app --reload
 ```
 
+### Docker 실행
+```bash
+make docker-up      # 컨테이너 시작 (Frontend:3000, Backend:8000)
+make docker-down    # 컨테이너 중지
+make docker-re      # 재빌드 + 시작
+make docker-logs    # 로그 확인
+```
+
 ---
 
 ## 환경변수
 
-### 루트 .env (프론트엔드용)
+### 루트 .env (통합)
 ```
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 SUPABASE_SERVICE_ROLE_KEY=xxx
-OPENAI_API_KEY=xxx
-```
 
-### back/.env (백엔드용)
-```
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=xxx
+# API
+NEXT_PUBLIC_API_URL=http://localhost:8000
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# OpenAI
 OPENAI_API_KEY=xxx
 OPENAI_MODEL=gpt-4o
+
+# LangSmith (선택)
 LANGCHAIN_TRACING_V2=false
 LANGCHAIN_API_KEY=xxx
 LANGCHAIN_PROJECT=quiz-generator
@@ -104,7 +118,8 @@ LANGCHAIN_PROJECT=quiz-generator
 ### Infra
 - Auth/DB/Storage: Supabase (Postgres + Auth + Storage)
 - LLM: OpenAI (GPT-4o)
-- 배포: Vercel (Front) + Railway/Render (Back)
+- 로컬 배포: Docker Compose
+- 프로덕션: Vercel (Front) + Railway/Render (Back)
 
 ---
 
@@ -115,10 +130,12 @@ LANGCHAIN_PROJECT=quiz-generator
 - [x] 퀴즈 결과 UI (QuizResult 컴포넌트)
 - [x] FastAPI 백엔드 구조
 - [x] LangGraph 퀴즈 생성 에이전트
-- [ ] Supabase 연동 (Auth, DB)
-- [ ] OAuth 로그인 (Google)
-- [ ] 문서 CRUD API 연동
-- [ ] 프론트-백 API 연동
+- [x] Supabase 연동 (Auth, DB)
+- [x] OAuth 로그인 (Google + Email)
+- [x] 문서 CRUD API (Backend + Frontend)
+- [x] 퀴즈 CRUD API (Backend + Frontend)
+- [x] 프론트-백 API 연동 (Bearer Token)
+- [x] Docker 배포 설정
 
 ---
 
@@ -224,11 +241,13 @@ LANGCHAIN_PROJECT=quiz-generator
 | POST | /api/documents | 문서 생성 |
 | GET | /api/documents | 문서 목록 |
 | GET | /api/documents/{id} | 문서 상세 |
+| PATCH | /api/documents/{id} | 문서 수정 |
 | DELETE | /api/documents/{id} | 문서 삭제 |
 | POST | /api/quizzes/generate | 퀴즈 생성 (LLM) |
+| GET | /api/quizzes | 퀴즈 목록 |
 | GET | /api/quizzes/{id} | 퀴즈 상세 |
 | POST | /api/quizzes/{id}/submit | 퀴즈 제출/채점 |
-| GET | /api/quizzes | 퀴즈 목록 |
+| DELETE | /api/quizzes/{id} | 퀴즈 삭제 |
 
 ---
 
@@ -272,8 +291,7 @@ LANGCHAIN_PROJECT=quiz-generator
 
 ## 다음 단계
 
-1. Supabase 테이블 생성 및 RLS 설정
-2. 백엔드 Supabase 클라이언트 연동
-3. 프론트엔드 Supabase Auth 연동
-4. 프론트-백 API 연동
-5. 배포 설정
+1. Backend 유닛 테스트 추가
+2. E2E 테스트 인증 환경변수 설정
+3. 프로덕션 배포 (Vercel + Railway/Render)
+4. PDF/URL 파싱 기능 구현

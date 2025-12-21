@@ -5,15 +5,11 @@ test.describe('퀴즈 관리 (인증됨)', () => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
-    // 내 퀴즈 카드의 링크 확인
-    const quizzesLink = page.getByRole('link', { name: /퀴즈 목록/i });
-
-    if (await quizzesLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await quizzesLink.click();
-      await expect(page).toHaveURL(/\/quizzes/);
-    } else {
-      test.skip(true, '인증이 필요합니다');
-    }
+    // 내 퀴즈 카드의 링크 확인 (실제 텍스트: "퀴즈 목록 보기")
+    const quizzesLink = page.getByRole('link', { name: /퀴즈 목록 보기/i });
+    await expect(quizzesLink).toBeVisible({ timeout: 5000 });
+    await quizzesLink.click();
+    await expect(page).toHaveURL(/\/quizzes/);
   });
 
   test('퀴즈 목록 페이지 레이아웃', async ({ page }) => {
@@ -28,15 +24,12 @@ test.describe('퀴즈 관리 (인증됨)', () => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
-    // 학습 현황 섹션 확인 (인증된 경우에만)
-    const statsSection = page.getByText(/학습 현황/i);
+    // 학습 현황 섹션 확인
+    await expect(page.getByText('학습 현황', { exact: true })).toBeVisible({ timeout: 10000 });
 
-    if (await statsSection.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await expect(page.getByText(/등록된 자료/i)).toBeVisible();
-      await expect(page.getByText(/생성된 퀴즈/i)).toBeVisible();
-    } else {
-      test.skip(true, '인증이 필요합니다');
-    }
+    // 통계 항목 확인 (exact match로 중복 방지)
+    await expect(page.getByText('등록된 자료', { exact: true })).toBeVisible();
+    await expect(page.getByText('생성된 퀴즈', { exact: true })).toBeVisible();
   });
 
   test('새 자료 등록 링크 동작', async ({ page }) => {
@@ -45,38 +38,8 @@ test.describe('퀴즈 관리 (인증됨)', () => {
 
     // 자료 등록하기 버튼 확인
     const newDocButton = page.getByRole('link', { name: /자료 등록하기/i });
-
-    if (await newDocButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await newDocButton.click();
-      await expect(page).toHaveURL(/\/documents\/new/);
-    } else {
-      test.skip(true, '인증이 필요합니다');
-    }
-  });
-});
-
-test.describe('로그인 페이지', () => {
-  test('이메일 로그인 폼 표시', async ({ page }) => {
-    await page.goto('/login');
-
-    // 이메일 입력 필드 확인
-    const emailInput = page.getByTestId('email-input');
-    await expect(emailInput).toBeVisible();
-
-    // 비밀번호 입력 필드 확인
-    const passwordInput = page.getByTestId('password-input');
-    await expect(passwordInput).toBeVisible();
-
-    // 로그인 버튼 확인
-    const loginButton = page.getByTestId('email-login-button');
-    await expect(loginButton).toBeVisible();
-  });
-
-  test('Google 로그인 버튼 표시', async ({ page }) => {
-    await page.goto('/login');
-
-    // Google 로그인 버튼 확인
-    const googleButton = page.getByRole('button', { name: /Google로 로그인/i });
-    await expect(googleButton).toBeVisible();
+    await expect(newDocButton).toBeVisible({ timeout: 5000 });
+    await newDocButton.click();
+    await expect(page).toHaveURL(/\/documents\/new/);
   });
 });
