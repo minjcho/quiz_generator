@@ -49,7 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -60,7 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) {
-      console.error('Google 로그인 오류:', error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Google 로그인 오류:', error.message);
+      }
       throw error;
     }
   };
@@ -77,7 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) {
-      console.error('이메일 로그인 오류:', error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('이메일 로그인 오류:', error.message);
+      }
       if (error.message.includes('Invalid login credentials')) {
         throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
       }
@@ -101,7 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) {
-      console.error('회원가입 오류:', error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('회원가입 오류:', error.message);
+      }
       if (error.message.includes('already registered')) {
         throw new Error('이미 등록된 이메일입니다.');
       }
@@ -113,7 +120,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error('로그아웃 오류:', error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('로그아웃 오류:', error.message);
+      }
       throw error;
     }
   };
