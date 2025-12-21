@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import { documentApi, quizApi, Difficulty } from '@/lib/api';
 import { Document } from '@/types/document';
 import { Brain, Loader2, FileText, Sparkles } from 'lucide-react';
 
-export default function GenerateQuizPage() {
+function GenerateQuizContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const documentIdParam = searchParams.get('document_id');
@@ -231,5 +231,22 @@ export default function GenerateQuizPage() {
         </Card>
       </main>
     </div>
+  );
+}
+
+export default function GenerateQuizPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50">
+          <Navbar />
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </div>
+      }
+    >
+      <GenerateQuizContent />
+    </Suspense>
   );
 }
