@@ -2,7 +2,8 @@ SHELL := /bin/bash
 
 .PHONY: all help install install-front install-back dev dev-front dev-back \
         test test-e2e test-back lint lint-front lint-back \
-        build clean fclean re db-status db-push db-reset
+        build clean fclean re db-status db-push db-reset \
+        docker-build docker-up docker-down docker-logs
 
 # 기본 타겟 (make만 실행 시)
 all: install lint build
@@ -37,12 +38,18 @@ help:
 	@echo "    make build          - 프로덕션 빌드"
 	@echo "    make clean          - 빌드 아티팩트 정리"
 	@echo "    make fclean         - 전체 정리 (node_modules 포함)"
-	@echo "    make re             - 재빌드 (fclean + all)"
+	@echo "    make re             - Docker 재빌드+배포"
 	@echo ""
 	@echo "  데이터베이스:"
 	@echo "    make db-status      - 마이그레이션 상태 확인"
 	@echo "    make db-push        - 마이그레이션 실행"
 	@echo "    make db-reset       - DB 초기화 (주의!)"
+	@echo ""
+	@echo "  Docker:"
+	@echo "    make docker-build   - Docker 이미지 빌드"
+	@echo "    make docker-up      - 컨테이너 시작"
+	@echo "    make docker-down    - 컨테이너 중지"
+	@echo "    make docker-logs    - 로그 확인"
 
 # =============================================================================
 # 설치
@@ -122,7 +129,7 @@ fclean: clean
 	rm -rf back/*.egg-info
 	@echo "✓ 전체 정리 완료 (node_modules 포함)"
 
-re: fclean all
+re: docker-down docker-build docker-up
 
 # =============================================================================
 # 데이터베이스
@@ -138,3 +145,23 @@ db-reset:
 	@echo "⚠️  주의: 모든 데이터가 삭제됩니다!"
 	@read -p "계속하시겠습니까? (y/N) " confirm && [ "$$confirm" = "y" ] || exit 1
 	npx supabase db reset
+
+# =============================================================================
+# Docker
+# =============================================================================
+
+docker-build:
+	docker-compose build
+
+docker-up:
+	docker-compose up -d
+	@echo "✓ 컨테이너 시작됨"
+	@echo "  Frontend: http://localhost:3000"
+	@echo "  Backend:  http://localhost:8000"
+
+docker-down:
+	docker-compose down
+	@echo "✓ 컨테이너 중지됨"
+
+docker-logs:
+	docker-compose logs -f
