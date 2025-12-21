@@ -1,14 +1,66 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navbar } from '@/components/layout/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileText, BookOpen, Plus, TrendingUp } from 'lucide-react';
+import { documentApi, quizApi } from '@/lib/api';
+import { FileText, BookOpen, Plus, TrendingUp, Loader2 } from 'lucide-react';
+
+interface DashboardStats {
+  documentCount: number;
+  quizCount: number;
+  averageScore: number;
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    documentCount: 0,
+    quizCount: 0,
+    averageScore: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadStats = async () => {
+      try {
+        setError(null);
+        const [documents, quizzesResponse] = await Promise.all([
+          documentApi.getAll(),
+          quizApi.getAll(),
+        ]);
+
+        if (mounted) {
+          setStats({
+            documentCount: documents.length,
+            quizCount: quizzesResponse.quizzes.length,
+            averageScore: 0, // TODO: Calculate from attempts
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+        if (mounted) {
+          setError('통계를 불러오는데 실패했습니다.');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadStats();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -79,7 +131,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Stats Section (Placeholder) */}
+        {/* Stats Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -88,20 +140,30 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-3xl font-bold text-blue-600">0</p>
-                <p className="text-sm text-gray-600">등록된 자료</p>
+            {error ? (
+              <div className="text-center py-8 text-red-600">
+                {error}
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-3xl font-bold text-green-600">0</p>
-                <p className="text-sm text-gray-600">완료한 퀴즈</p>
+            ) : loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-3xl font-bold text-purple-600">0%</p>
-                <p className="text-sm text-gray-600">평균 정답률</p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-3xl font-bold text-blue-600">{stats.documentCount}</p>
+                  <p className="text-sm text-gray-600">등록된 자료</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <p className="text-3xl font-bold text-green-600">{stats.quizCount}</p>
+                  <p className="text-sm text-gray-600">생성된 퀴즈</p>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <p className="text-3xl font-bold text-purple-600">-</p>
+                  <p className="text-sm text-gray-600">평균 정답률</p>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </main>
