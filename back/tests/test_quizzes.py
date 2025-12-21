@@ -1,3 +1,4 @@
+import copy
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.agents.quiz_generator import QuizGenerateResult
@@ -183,7 +184,7 @@ class TestGetQuiz:
 
     def test_get_quiz_forbidden(self, client, sample_quiz_with_questions):
         """Get quiz owned by another user returns 403."""
-        quiz = sample_quiz_with_questions.copy()
+        quiz = copy.deepcopy(sample_quiz_with_questions)
         quiz["user_id"] = OTHER_USER_ID
 
         mock_quiz_table = create_mock_table(quiz)
@@ -288,7 +289,7 @@ class TestSubmitQuiz:
 
     def test_submit_quiz_forbidden(self, client, sample_quiz_with_questions):
         """Submit quiz owned by another user returns 403."""
-        quiz = sample_quiz_with_questions.copy()
+        quiz = copy.deepcopy(sample_quiz_with_questions)
         quiz["user_id"] = OTHER_USER_ID
 
         mock_quiz_table = create_mock_table(quiz)
