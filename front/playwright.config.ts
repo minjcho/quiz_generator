@@ -1,4 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
+
+const authFile = path.join(__dirname, '.playwright/.auth/user.json');
 
 export default defineConfig({
   testDir: './e2e',
@@ -12,9 +15,26 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
+    // Setup project - 인증 상태 준비
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+    // 비인증 테스트 (기존)
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: /.*\.(authenticated|setup)\.ts/,
+    },
+    // 인증 필요 테스트
+    {
+      name: 'authenticated',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: authFile,
+      },
+      dependencies: ['setup'],
+      testMatch: /.*\.authenticated\.ts/,
     },
   ],
   webServer: {

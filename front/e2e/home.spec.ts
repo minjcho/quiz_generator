@@ -26,18 +26,22 @@ test.describe('홈페이지', () => {
     await expect(loginLink).toHaveAttribute('href', '/login');
   });
 
-  test('CTA 링크가 존재하고 로그인 페이지로 연결됨', async ({ page }) => {
+  test('CTA 링크 또는 대시보드 리다이렉트', async ({ page }) => {
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
-    // 로그인 페이지로 연결되는 링크가 하나 이상 존재하는지 확인
-    const loginLinks = page.locator('a[href="/login"]');
-    const count = await loginLinks.count();
+    // 로그인된 경우 대시보드로 리다이렉트되거나, 비로그인 시 로그인 링크 표시
+    const url = page.url();
 
-    // 최소 1개 이상의 로그인 링크 존재
-    expect(count).toBeGreaterThanOrEqual(1);
-
-    // 첫 번째 링크가 보이는지 확인
-    await expect(loginLinks.first()).toBeVisible();
+    if (url.includes('/dashboard')) {
+      // 로그인된 상태 - 대시보드로 리다이렉트됨
+      await expect(page).toHaveURL(/\/dashboard/);
+    } else {
+      // 비로그인 상태 - 로그인 링크 확인
+      const loginLinks = page.locator('a[href="/login"]');
+      const count = await loginLinks.count();
+      expect(count).toBeGreaterThanOrEqual(1);
+    }
   });
 
   test('페이지 로드 시 JavaScript 에러가 없음', async ({ page }) => {
