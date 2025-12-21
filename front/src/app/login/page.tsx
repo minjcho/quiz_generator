@@ -42,8 +42,7 @@ export default function LoginPage() {
 
     try {
       await signInWithEmail(email, password);
-      // 로그인 성공 시 즉시 리다이렉트
-      router.push(redirectTo);
+      // useEffect가 user 상태 변경 시 리다이렉트 처리
     } catch (err) {
       // 에러 메시지 그대로 표시 (AuthContext에서 구체화된 메시지 사용)
       if (err instanceof Error) {

@@ -6,14 +6,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Auth validation utilities
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 const MIN_PASSWORD_LENGTH = 8;
+const MAX_EMAIL_LENGTH = 320; // RFC 5321
 
 export function validateEmail(email: string): string | null {
-  if (!email) {
+  const trimmed = email?.trim();
+  if (!trimmed) {
     return '이메일을 입력해주세요.';
   }
-  if (!EMAIL_REGEX.test(email)) {
+  if (trimmed.length > MAX_EMAIL_LENGTH) {
+    return '이메일이 너무 깁니다.';
+  }
+  if (!EMAIL_REGEX.test(trimmed)) {
     return '올바른 이메일 형식이 아닙니다.';
   }
   return null;

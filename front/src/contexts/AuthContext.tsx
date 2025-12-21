@@ -81,7 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error.message.includes('Invalid login credentials')) {
         throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
       }
-      throw error;
+      if (error.message.includes('Email not confirmed')) {
+        throw new Error('이메일 인증이 필요합니다. 이메일을 확인해주세요.');
+      }
+      // 알 수 없는 에러는 generic 메시지로 변환 (보안)
+      throw new Error('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -98,7 +102,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       console.error('회원가입 오류:', error.message);
-      throw error;
+      if (error.message.includes('already registered')) {
+        throw new Error('이미 등록된 이메일입니다.');
+      }
+      // 알 수 없는 에러는 generic 메시지로 변환 (보안)
+      throw new Error('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
 
