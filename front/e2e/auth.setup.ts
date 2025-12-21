@@ -29,14 +29,14 @@ setup('authenticate', async ({ page }) => {
   await page.goto('/login');
 
   // 이메일/비밀번호 로그인 폼이 있다면 사용
-  const emailInput = page.getByLabel(/이메일|email/i);
-  const passwordInput = page.getByLabel(/비밀번호|password/i);
+  const emailInput = page.getByTestId('email-input');
+  const passwordInput = page.getByTestId('password-input');
 
   if (await emailInput.isVisible({ timeout: 3000 }).catch(() => false)) {
     await emailInput.fill(testEmail);
     await passwordInput.fill(testPassword);
 
-    const loginButton = page.getByRole('button', { name: /로그인|sign in/i });
+    const loginButton = page.getByTestId('email-login-button');
     await loginButton.click();
 
     // 로그인 성공 후 대시보드로 리다이렉트 대기

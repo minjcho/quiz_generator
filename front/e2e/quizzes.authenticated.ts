@@ -60,15 +60,15 @@ test.describe('로그인 페이지', () => {
     await page.goto('/login');
 
     // 이메일 입력 필드 확인
-    const emailInput = page.getByLabel(/이메일/i);
+    const emailInput = page.getByTestId('email-input');
     await expect(emailInput).toBeVisible();
 
     // 비밀번호 입력 필드 확인
-    const passwordInput = page.getByLabel(/비밀번호/i);
+    const passwordInput = page.getByTestId('password-input');
     await expect(passwordInput).toBeVisible();
 
     // 로그인 버튼 확인
-    const loginButton = page.getByRole('button', { name: /이메일로 로그인/i });
+    const loginButton = page.getByTestId('email-login-button');
     await expect(loginButton).toBeVisible();
   });
 

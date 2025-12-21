@@ -1,9 +1,34 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User, Session, AuthError } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { validateAuthInput } from '@/lib/utils';
+
+// Supabase Auth 에러 코드 매핑
+function getAuthErrorMessage(error: AuthError): string {
+  // status 기반 에러 처리 (더 안정적)
+  if (error.status === 400) {
+    return '이메일 또는 비밀번호가 올바르지 않습니다.';
+  }
+  if (error.status === 422) {
+    return '이메일 인증이 필요합니다. 이메일을 확인해주세요.';
+  }
+  if (error.status === 429) {
+    return '너무 많은 요청입니다. 잠시 후 다시 시도해주세요.';
+  }
+  return '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
+}
+
+function getSignUpErrorMessage(error: AuthError): string {
+  if (error.status === 422) {
+    return '이미 등록된 이메일입니다.';
+  }
+  if (error.status === 429) {
+    return '너무 많은 요청입니다. 잠시 후 다시 시도해주세요.';
+  }
+  return '회원가입 중 오류가 발생했습니다. 다시 시도해주세요.';
+}
 
 interface AuthContextType {
   user: User | null;
@@ -83,14 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (process.env.NODE_ENV === 'development') {
         console.error('이메일 로그인 오류:', error.message);
       }
-      if (error.message.includes('Invalid login credentials')) {
-        throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
-      }
-      if (error.message.includes('Email not confirmed')) {
-        throw new Error('이메일 인증이 필요합니다. 이메일을 확인해주세요.');
-      }
-      // 알 수 없는 에러는 generic 메시지로 변환 (보안)
-      throw new Error('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+      throw new Error(getAuthErrorMessage(error));
     }
   };
 
@@ -109,11 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (process.env.NODE_ENV === 'development') {
         console.error('회원가입 오류:', error.message);
       }
-      if (error.message.includes('already registered')) {
-        throw new Error('이미 등록된 이메일입니다.');
-      }
-      // 알 수 없는 에러는 generic 메시지로 변환 (보안)
-      throw new Error('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+      throw new Error(getSignUpErrorMessage(error));
     }
   };
 
