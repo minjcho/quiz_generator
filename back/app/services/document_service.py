@@ -1,4 +1,3 @@
-
 from app.core.supabase import get_supabase_admin
 
 
