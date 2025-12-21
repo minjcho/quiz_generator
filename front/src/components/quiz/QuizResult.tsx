@@ -92,7 +92,7 @@ export function QuizResult({
       {wrongResults.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold">오답 복습</h2>
-          {wrongResults.map(({ question, selectedIndex }, index) => (
+          {wrongResults.map(({ question, selectedIndex }) => (
             <Card key={question.id} className="border-red-200">
               <CardHeader className="pb-2">
                 <div className="flex items-start gap-2">
@@ -137,7 +137,7 @@ export function QuizResult({
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                   <p className="font-medium text-gray-700">근거</p>
-                  <p className="text-sm text-gray-600 italic">"{question.source_excerpt}"</p>
+                  <p className="text-sm text-gray-600 italic">&ldquo;{question.source_excerpt}&rdquo;</p>
                 </div>
               </CardContent>
             </Card>
