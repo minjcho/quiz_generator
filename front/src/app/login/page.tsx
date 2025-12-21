@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -161,7 +162,14 @@ function LoginContent() {
             Google로 로그인
           </Button>
 
-          <p className="text-xs text-center text-muted-foreground mt-4">
+          <div className="text-center text-sm text-muted-foreground">
+            계정이 없으신가요?{' '}
+            <Link href="/signup" className="text-primary hover:underline">
+              회원가입
+            </Link>
+          </div>
+
+          <p className="text-xs text-center text-muted-foreground">
             로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하게 됩니다.
           </p>
         </CardContent>
