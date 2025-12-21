@@ -95,3 +95,60 @@ class TestUrlCrawlerService:
                 await crawler.extract_content("https://example.com/short")
 
         assert "본문 텍스트를 추출할 수 없습니다" in str(exc_info.value)
+
+    # SSRF 방지 테스트
+    @pytest.mark.asyncio
+    async def test_reject_non_http_scheme(self, crawler):
+        """Reject non-HTTP/HTTPS URLs."""
+        with pytest.raises(ValueError) as exc_info:
+            await crawler.extract_content("file:///etc/passwd")
+
+        assert "HTTP/HTTPS URL만 지원됩니다" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_reject_ftp_scheme(self, crawler):
+        """Reject FTP URLs."""
+        with pytest.raises(ValueError) as exc_info:
+            await crawler.extract_content("ftp://example.com/file")
+
+        assert "HTTP/HTTPS URL만 지원됩니다" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_reject_localhost(self, crawler):
+        """Reject localhost URLs."""
+        with pytest.raises(ValueError) as exc_info:
+            await crawler.extract_content("http://localhost:8000/api")
+
+        assert "내부 네트워크 URL은 허용되지 않습니다" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_reject_127_0_0_1(self, crawler):
+        """Reject 127.0.0.1 URLs."""
+        with pytest.raises(ValueError) as exc_info:
+            await crawler.extract_content("http://127.0.0.1:8000/api")
+
+        assert "내부 네트워크 URL은 허용되지 않습니다" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_reject_private_ip_192(self, crawler):
+        """Reject 192.168.x.x private IP URLs."""
+        with pytest.raises(ValueError) as exc_info:
+            await crawler.extract_content("http://192.168.1.1/admin")
+
+        assert "내부 네트워크 URL은 허용되지 않습니다" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_reject_private_ip_10(self, crawler):
+        """Reject 10.x.x.x private IP URLs."""
+        with pytest.raises(ValueError) as exc_info:
+            await crawler.extract_content("http://10.0.0.1/internal")
+
+        assert "내부 네트워크 URL은 허용되지 않습니다" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_reject_metadata_server(self, crawler):
+        """Reject AWS/cloud metadata server URLs."""
+        with pytest.raises(ValueError) as exc_info:
+            await crawler.extract_content("http://169.254.169.254/latest/meta-data")
+
+        assert "내부 네트워크 URL은 허용되지 않습니다" in str(exc_info.value)
