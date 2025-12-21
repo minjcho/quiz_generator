@@ -40,6 +40,10 @@ async function fetchWithAuth<T>(
 }
 
 // Document API
+interface DocumentListResponse {
+  documents: Document[];
+}
+
 export const documentApi = {
   create: (data: DocumentCreate): Promise<Document> => {
     return fetchWithAuth<Document>('/api/documents', {
@@ -48,8 +52,9 @@ export const documentApi = {
     });
   },
 
-  getAll: (): Promise<Document[]> => {
-    return fetchWithAuth<Document[]>('/api/documents');
+  getAll: async (): Promise<Document[]> => {
+    const response = await fetchWithAuth<DocumentListResponse>('/api/documents');
+    return response.documents;
   },
 
   getById: (id: string): Promise<Document> => {
