@@ -28,23 +28,21 @@ setup('authenticate', async ({ page }) => {
   // 로그인 페이지로 이동
   await page.goto('/login');
 
-  // 이메일/비밀번호 로그인 폼이 있다면 사용
+  // 자격증명이 있으면 로그인 반드시 성공해야 함
   const emailInput = page.getByTestId('email-input');
+  await expect(emailInput).toBeVisible({ timeout: 5000 });
+
   const passwordInput = page.getByTestId('password-input');
+  await expect(passwordInput).toBeVisible();
 
-  if (await emailInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await emailInput.fill(testEmail);
-    await passwordInput.fill(testPassword);
+  await emailInput.fill(testEmail);
+  await passwordInput.fill(testPassword);
 
-    const loginButton = page.getByTestId('email-login-button');
-    await loginButton.click();
+  const loginButton = page.getByTestId('email-login-button');
+  await loginButton.click();
 
-    // 로그인 성공 후 대시보드로 리다이렉트 대기
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
-  } else {
-    console.log('⚠️ 이메일/비밀번호 로그인 폼을 찾을 수 없습니다.');
-    console.log('⚠️ Google OAuth만 지원되는 경우 수동 설정이 필요합니다.');
-  }
+  // 로그인 성공 후 대시보드로 리다이렉트 대기
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
 
   // 인증 상태 저장
   await page.context().storageState({ path: authFile });
