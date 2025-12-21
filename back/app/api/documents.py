@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.services.document_service import document_service
 from app.core.auth import get_current_user_id
+from app.services.document_service import document_service
 
 router = APIRouter()
 

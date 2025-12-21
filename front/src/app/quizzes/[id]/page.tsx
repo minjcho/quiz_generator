@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { quizApi, Quiz, QuizQuestion, QuizSubmitResponse, QuestionResult, Difficulty } from '@/lib/api';
+import { quizApi, Quiz, QuizSubmitResponse, Difficulty } from '@/lib/api';
 import {
   Loader2,
   ChevronLeft,
@@ -25,7 +25,6 @@ type ViewMode = 'quiz' | 'result';
 
 export default function QuizPlayPage() {
   const params = useParams();
-  const router = useRouter();
   const quizId = params.id as string;
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
@@ -41,11 +40,7 @@ export default function QuizPlayPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('quiz');
   const [result, setResult] = useState<QuizSubmitResponse | null>(null);
 
-  useEffect(() => {
-    loadQuiz();
-  }, [quizId]);
-
-  const loadQuiz = async () => {
+  const loadQuiz = useCallback(async () => {
     try {
       setLoading(true);
       const data = await quizApi.getById(quizId);
@@ -55,7 +50,11 @@ export default function QuizPlayPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [quizId]);
+
+  useEffect(() => {
+    loadQuiz();
+  }, [loadQuiz]);
 
   const handleAnswer = (questionId: string, choiceIndex: number) => {
     setAnswers((prev) => ({
