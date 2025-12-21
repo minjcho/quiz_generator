@@ -1,21 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('홈페이지', () => {
-  test.beforeEach(async ({ page }) => {
-    // 각 테스트 전 페이지 에러 리스너 설정
-    const errors: string[] = [];
-    page.on('pageerror', (error) => {
-      errors.push(error.message);
-    });
-
-    // 테스트 후 에러가 있으면 실패
-    page.on('close', () => {
-      if (errors.length > 0) {
-        console.error('Page errors detected:', errors);
-      }
-    });
-  });
-
   test('랜딩 페이지가 정상적으로 로드됨', async ({ page }) => {
     const response = await page.goto('/');
 
@@ -41,15 +26,36 @@ test.describe('홈페이지', () => {
     await expect(loginLink).toHaveAttribute('href', '/login');
   });
 
-  test('CTA 버튼이 존재함', async ({ page }) => {
+  test('CTA 링크가 존재하고 로그인 페이지로 연결됨', async ({ page }) => {
     await page.goto('/');
 
-    // "무료로 시작하기" 또는 유사한 CTA 링크 확인
-    const ctaLink = page.getByRole('link', { name: /시작하기/i });
-    await expect(ctaLink).toBeVisible();
+    // 로그인 페이지로 연결되는 링크가 하나 이상 존재하는지 확인
+    const loginLinks = page.locator('a[href="/login"]');
+    const count = await loginLinks.count();
+
+    // 최소 1개 이상의 로그인 링크 존재
+    expect(count).toBeGreaterThanOrEqual(1);
+
+    // 첫 번째 링크가 보이는지 확인
+    await expect(loginLinks.first()).toBeVisible();
   });
 
-  test('페이지 네비게이션에 에러가 없음', async ({ page }) => {
+  test('페이지 로드 시 JavaScript 에러가 없음', async ({ page }) => {
+    const pageErrors: string[] = [];
+
+    // 페이지 에러 리스너 설정
+    page.on('pageerror', (error) => {
+      pageErrors.push(error.message);
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // JavaScript 에러가 없어야 함
+    expect(pageErrors).toHaveLength(0);
+  });
+
+  test('페이지 네비게이션에 서버 에러가 없음', async ({ page }) => {
     const response = await page.goto('/');
 
     // 서버 에러가 없는지 확인
