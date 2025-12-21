@@ -36,6 +36,8 @@ function SignupContent() {
 
     try {
       await signUpWithEmail(trimmedEmail, password);
+      setPassword('');
+      setConfirmPassword('');
       setSuccess(true);
     } catch (err) {
       if (err instanceof Error) {
