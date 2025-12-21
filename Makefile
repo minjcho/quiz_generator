@@ -153,7 +153,10 @@ db-reset:
 
 .env-check:
 	@if [ ! -f .env ]; then \
-		echo "❌ .env 파일이 없습니다. .env.example을 참고하여 생성하세요."; \
+		echo "❌ .env 파일이 없습니다."; \
+		echo "💡 다음 명령어로 생성하세요:"; \
+		echo "   cp .env.example .env"; \
+		echo "   # 그 후 .env 파일을 편집하여 실제 값을 입력하세요"; \
 		exit 1; \
 	fi
 

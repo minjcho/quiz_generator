@@ -8,9 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
+# Copy requirements and install (non-editable for production)
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
 
 # Copy application
 COPY app ./app
