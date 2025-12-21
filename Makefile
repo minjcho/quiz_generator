@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .PHONY: all help install install-front install-back dev dev-front dev-back \
         test test-e2e test-back lint lint-front lint-back \
         build clean fclean re db-status db-push db-reset \
-        docker-build docker-up docker-down docker-logs
+        docker-build docker-up docker-down docker-logs docker-re
 
 # 기본 타겟 (make만 실행 시)
 all: install lint build
@@ -38,7 +38,7 @@ help:
 	@echo "    make build          - 프로덕션 빌드"
 	@echo "    make clean          - 빌드 아티팩트 정리"
 	@echo "    make fclean         - 전체 정리 (node_modules 포함)"
-	@echo "    make re             - Docker 재빌드+배포"
+	@echo "    make re             - 재빌드 (fclean + all)"
 	@echo ""
 	@echo "  데이터베이스:"
 	@echo "    make db-status      - 마이그레이션 상태 확인"
@@ -50,6 +50,7 @@ help:
 	@echo "    make docker-up      - 컨테이너 시작"
 	@echo "    make docker-down    - 컨테이너 중지"
 	@echo "    make docker-logs    - 로그 확인"
+	@echo "    make docker-re      - Docker 재빌드+배포"
 
 # =============================================================================
 # 설치
@@ -129,7 +130,7 @@ fclean: clean
 	rm -rf back/*.egg-info
 	@echo "✓ 전체 정리 완료 (node_modules 포함)"
 
-re: docker-down docker-build docker-up
+re: fclean all
 
 # =============================================================================
 # 데이터베이스
@@ -150,10 +151,16 @@ db-reset:
 # Docker
 # =============================================================================
 
-docker-build:
+.env-check:
+	@if [ ! -f .env ]; then \
+		echo "❌ .env 파일이 없습니다. .env.example을 참고하여 생성하세요."; \
+		exit 1; \
+	fi
+
+docker-build: .env-check
 	docker-compose build
 
-docker-up:
+docker-up: .env-check
 	docker-compose up -d
 	@echo "✓ 컨테이너 시작됨"
 	@echo "  Frontend: http://localhost:3000"
@@ -165,3 +172,5 @@ docker-down:
 
 docker-logs:
 	docker-compose logs -f
+
+docker-re: docker-down docker-build docker-up

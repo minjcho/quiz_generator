@@ -5,8 +5,13 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Quiz Generator API"
     VERSION: str = "0.1.0"
 
-    # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # CORS (comma-separated for env var, e.g., "http://localhost:3000,http://frontend:3000")
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS_ORIGINS string into list."""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     # Supabase
     SUPABASE_URL: str = ""
