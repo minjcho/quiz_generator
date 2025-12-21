@@ -31,7 +31,9 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
     } catch (err) {
-      console.error('로그인 실패:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('로그인 실패:', err);
+      }
     }
   };
 
@@ -55,7 +57,9 @@ export default function LoginPage() {
       }
       // 보안을 위해 비밀번호 초기화
       setPassword('');
-      console.error('로그인 실패:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('로그인 실패:', err);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -94,7 +98,7 @@ export default function LoginPage() {
                 type="email"
                 placeholder="your@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.trim())}
                 required
                 data-testid="email-input"
               />
