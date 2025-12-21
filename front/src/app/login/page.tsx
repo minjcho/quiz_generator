@@ -1,17 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithEmail } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/dashboard';
   const error = searchParams.get('error');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && user) {
@@ -23,7 +31,36 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
     } catch (err) {
-      console.error('로그인 실패:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('로그인 실패:', err);
+      }
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setIsSubmitting(true);
+
+    const trimmedEmail = email.trim();
+
+    try {
+      await signInWithEmail(trimmedEmail, password);
+      // useEffect가 user 상태 변경 시 리다이렉트 처리
+    } catch (err) {
+      // 에러 메시지 그대로 표시 (AuthContext에서 구체화된 메시지 사용)
+      if (err instanceof Error) {
+        setLoginError(err.message);
+      } else {
+        setLoginError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+      // 보안을 위해 비밀번호 초기화
+      setPassword('');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('로그인 실패:', err);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -45,11 +82,58 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {error && (
+          {(error || loginError) && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
-              로그인 중 오류가 발생했습니다. 다시 시도해주세요.
+              {loginError || '로그인 중 오류가 발생했습니다. 다시 시도해주세요.'}
             </div>
           )}
+
+          {/* 이메일/비밀번호 로그인 폼 */}
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">이메일</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                data-testid="email-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">비밀번호</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                data-testid="password-input"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="email-login-button">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  로그인 중...
+                </>
+              ) : (
+                '이메일로 로그인'
+              )}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">또는</span>
+            </div>
+          </div>
 
           <Button
             onClick={handleGoogleLogin}
