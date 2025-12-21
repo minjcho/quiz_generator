@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Depends
 
 from app.schemas.quiz import (
     QuizGenerateRequest,
@@ -10,26 +10,17 @@ from app.schemas.quiz import (
 from app.agents.quiz_generator import generate_quiz
 from app.services.quiz_service import quiz_service
 from app.services.document_service import document_service
+from app.core.auth import get_current_user_id
 
 router = APIRouter()
-
-
-def get_user_id(authorization: str | None) -> str:
-    """임시: Authorization 헤더에서 user_id 추출"""
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header required")
-    if authorization.startswith("Bearer "):
-        return authorization[7:]
-    return authorization
 
 
 @router.post("/generate", response_model=QuizGenerateResponse)
 async def generate_quiz_endpoint(
     request: QuizGenerateRequest,
-    authorization: str | None = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """퀴즈 생성 (LangGraph Agent 호출)"""
-    user_id = get_user_id(authorization)
 
     # 문서 존재 및 소유권 확인
     document = await document_service.get_by_id(request.document_id)
@@ -75,10 +66,9 @@ async def generate_quiz_endpoint(
 @router.get("/{quiz_id}")
 async def get_quiz(
     quiz_id: str,
-    authorization: str | None = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """퀴즈 상세 조회 (문제 포함)"""
-    user_id = get_user_id(authorization)
 
     quiz = await quiz_service.get_quiz_with_questions(quiz_id)
     if not quiz:
@@ -94,10 +84,9 @@ async def get_quiz(
 async def submit_quiz(
     quiz_id: str,
     request: QuizSubmitRequest,
-    authorization: str | None = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """퀴즈 제출 및 채점"""
-    user_id = get_user_id(authorization)
 
     quiz = await quiz_service.get_quiz_with_questions(quiz_id)
     if not quiz:
@@ -152,9 +141,8 @@ async def submit_quiz(
 
 
 @router.get("")
-async def list_quizzes(authorization: str | None = Header(None)):
+async def list_quizzes(user_id: str = Depends(get_current_user_id)):
     """퀴즈 목록 조회"""
-    user_id = get_user_id(authorization)
     quizzes = await quiz_service.get_quizzes_by_user(user_id)
     return {"quizzes": quizzes}
 
@@ -162,10 +150,9 @@ async def list_quizzes(authorization: str | None = Header(None)):
 @router.delete("/{quiz_id}")
 async def delete_quiz(
     quiz_id: str,
-    authorization: str | None = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """퀴즈 삭제"""
-    user_id = get_user_id(authorization)
 
     quiz = await quiz_service.get_quiz_by_id(quiz_id)
     if not quiz:

@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # Supabase
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
+    SUPABASE_JWT_SECRET: str = ""  # JWT 검증용 (선택사항, 없으면 검증 스킵)
 
     # OpenAI
     OPENAI_API_KEY: str = ""

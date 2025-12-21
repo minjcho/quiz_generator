@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 from app.services.document_service import document_service
+from app.core.auth import get_current_user_id
 
 router = APIRouter()
 
@@ -29,26 +30,12 @@ class DocumentResponse(BaseModel):
     updated_at: str
 
 
-def get_user_id(authorization: str | None) -> str:
-    """임시: Authorization 헤더에서 user_id 추출
-    TODO: 실제 JWT 검증으로 교체
-    """
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header required")
-    # 임시로 Bearer 토큰을 user_id로 사용
-    # 실제로는 Supabase JWT를 검증해야 함
-    if authorization.startswith("Bearer "):
-        return authorization[7:]
-    return authorization
-
-
 @router.post("", response_model=dict)
 async def create_document(
     document: DocumentCreate,
-    authorization: str | None = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """문서 생성"""
-    user_id = get_user_id(authorization)
 
     result = await document_service.create(
         user_id=user_id,
@@ -65,9 +52,8 @@ async def create_document(
 
 
 @router.get("")
-async def list_documents(authorization: str | None = Header(None)):
+async def list_documents(user_id: str = Depends(get_current_user_id)):
     """문서 목록 조회"""
-    user_id = get_user_id(authorization)
     documents = await document_service.get_by_user(user_id)
     return {"documents": documents}
 
@@ -75,10 +61,9 @@ async def list_documents(authorization: str | None = Header(None)):
 @router.get("/{document_id}")
 async def get_document(
     document_id: str,
-    authorization: str | None = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """문서 상세 조회"""
-    user_id = get_user_id(authorization)
     document = await document_service.get_by_id(document_id)
 
     if not document:
@@ -95,10 +80,9 @@ async def get_document(
 async def update_document(
     document_id: str,
     update: DocumentUpdate,
-    authorization: str | None = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """문서 수정"""
-    user_id = get_user_id(authorization)
 
     # 기존 문서 확인
     existing = await document_service.get_by_id(document_id)
@@ -119,10 +103,9 @@ async def update_document(
 @router.delete("/{document_id}")
 async def delete_document(
     document_id: str,
-    authorization: str | None = Header(None),
+    user_id: str = Depends(get_current_user_id),
 ):
     """문서 삭제"""
-    user_id = get_user_id(authorization)
 
     # 기존 문서 확인
     existing = await document_service.get_by_id(document_id)
