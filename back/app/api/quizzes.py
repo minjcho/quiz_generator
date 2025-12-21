@@ -1,16 +1,16 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.agents.quiz_generator import generate_quiz
+from app.core.auth import get_current_user_id
 from app.schemas.quiz import (
+    QuestionResult,
     QuizGenerateRequest,
     QuizGenerateResponse,
     QuizSubmitRequest,
     QuizSubmitResponse,
-    QuestionResult,
 )
-from app.agents.quiz_generator import generate_quiz
-from app.services.quiz_service import quiz_service
 from app.services.document_service import document_service
-from app.core.auth import get_current_user_id
+from app.services.quiz_service import quiz_service
 
 router = APIRouter()
 

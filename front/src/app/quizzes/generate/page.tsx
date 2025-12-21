@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -30,11 +30,7 @@ export default function GenerateQuizPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadDocuments();
-  }, []);
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       const data = await documentApi.getAll();
       setDocuments(data);
@@ -46,7 +42,11 @@ export default function GenerateQuizPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [documentIdParam]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
 
   const handleGenerate = async () => {
     if (!selectedDocumentId) {
@@ -72,17 +72,6 @@ export default function GenerateQuizPage() {
   };
 
   const selectedDocument = documents.find((d) => d.id === selectedDocumentId);
-
-  const getDifficultyLabel = (diff: Difficulty) => {
-    switch (diff) {
-      case 'easy':
-        return '쉬움';
-      case 'medium':
-        return '보통';
-      case 'hard':
-        return '어려움';
-    }
-  };
 
   if (isLoading) {
     return (

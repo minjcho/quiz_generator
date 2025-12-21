@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from app.core.supabase import get_supabase_admin
 
 
