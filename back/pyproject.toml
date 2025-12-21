@@ -22,6 +22,8 @@ dependencies = [
     # Document processing
     "pypdf>=5.0.0",
     "python-multipart>=0.0.17",
+    # URL crawling
+    "trafilatura>=2.0.0",
 ]
 
 [project.optional-dependencies]

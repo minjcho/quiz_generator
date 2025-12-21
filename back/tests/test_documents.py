@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from tests.conftest import (
     TEST_USER_ID,
@@ -40,6 +40,59 @@ class TestCreateDocument:
         )
 
         assert response.status_code == 401
+
+    def test_create_document_url_success(self, client, sample_document):
+        """Successfully create a document from URL with crawling."""
+        url_document = sample_document.copy()
+        url_document["source_type"] = "url"
+        url_document["source_url"] = "https://example.com/article"
+        url_document["content_text"] = "Crawled content from the web page."
+
+        mock_table = create_mock_table([url_document])
+        mock_crawler = AsyncMock()
+        mock_crawler.extract_content.return_value = {
+            "text": "Crawled content from the web page.",
+            "title": "Article Title",
+            "success": True,
+        }
+
+        with (
+            patch("app.services.document_service.document_service.table", mock_table),
+            patch("app.api.documents.url_crawler_service", mock_crawler),
+        ):
+            response = client.post(
+                "/api/documents",
+                json={
+                    "title": "Test URL Document",
+                    "content_text": "",
+                    "source_type": "url",
+                    "source_url": "https://example.com/article",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "document_id" in data
+        mock_crawler.extract_content.assert_called_once_with("https://example.com/article")
+
+    def test_create_document_url_crawl_error(self, client):
+        """Create document from URL returns 400 when crawling fails."""
+        mock_crawler = AsyncMock()
+        mock_crawler.extract_content.side_effect = ValueError("URL에 접근할 수 없습니다")
+
+        with patch("app.api.documents.url_crawler_service", mock_crawler):
+            response = client.post(
+                "/api/documents",
+                json={
+                    "title": "Test URL Document",
+                    "content_text": "",
+                    "source_type": "url",
+                    "source_url": "https://invalid-url.com",
+                },
+            )
+
+        assert response.status_code == 400
+        assert "URL에 접근할 수 없습니다" in response.json()["detail"]
 
 
 class TestListDocuments:

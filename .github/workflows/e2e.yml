@@ -42,7 +42,12 @@ jobs:
       - name: Install backend dependencies
         run: |
           cd back
-          pip install -e .
+          pip install -e ".[dev]"
+
+      - name: Run backend tests
+        run: |
+          cd back
+          pytest tests/ -v --tb=short
 
       - name: Start backend server
         run: |
