@@ -93,7 +93,7 @@ test-e2e:
 	cd front && npm run test:e2e
 
 test-back:
-	cd back && python -m pytest 2>/dev/null || echo "⚠️  백엔드 테스트 없음"
+	cd back && python -m pytest tests/ -v
 
 # =============================================================================
 # 린트
