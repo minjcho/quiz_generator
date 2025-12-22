@@ -1,10 +1,28 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
+function getOrigin(request: Request): string {
+  // 1. 환경변수로 명시적 설정 (최우선)
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+
+  // 2. 리버스 프록시 헤더 확인 (Coolify/Traefik 등)
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  if (forwardedHost) {
+    const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  // 3. 기본값: request URL의 origin
+  return new URL(request.url).origin;
+}
+
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const url = new URL(request.url);
+  const origin = getOrigin(request);
+  const code = url.searchParams.get('code');
+  const next = url.searchParams.get('next') ?? '/dashboard';
 
   if (code) {
     const supabase = await createClient();
