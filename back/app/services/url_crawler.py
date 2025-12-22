@@ -11,8 +11,6 @@ BLOCKED_PREFIXES = ["192.168.", "10.", "172.16.", "172.17.", "172.18.", "172.19.
                     "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
                     "169.254."]
 
-# 타임아웃 설정 (초)
-FETCH_TIMEOUT = 10
 
 
 class UrlCrawlerService:
@@ -64,8 +62,9 @@ class UrlCrawlerService:
         # URL 보안 검증
         self._validate_url(url)
 
-        # URL에서 HTML 다운로드 (타임아웃 설정)
-        downloaded = trafilatura.fetch_url(url, timeout=FETCH_TIMEOUT)
+        # URL에서 HTML 다운로드
+        # trafilatura 2.0.0에서는 fetch_url에 timeout 직접 지원 안함
+        downloaded = trafilatura.fetch_url(url)
 
         if not downloaded:
             raise ValueError(f"URL에 접근할 수 없습니다: {url}")
