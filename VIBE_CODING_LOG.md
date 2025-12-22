@@ -85,7 +85,7 @@ LangGraph를 사용해서 퀴즈 생성 에이전트를 만들어줘.
 ```
 
 **결과**:
-- `back/app/agents/quiz_agent.py` - LangGraph 워크플로우
+- `back/app/agents/quiz_generator.py` - LangGraph 워크플로우
 - Structured Output으로 JSON 스키마 강제
 - 재시도 로직 (최대 2회)
 
@@ -173,32 +173,159 @@ pytest로 API 엔드포인트와 서비스 레이어를 테스트해줘.
 ```
 
 **결과**:
-- `back/tests/` - pytest 테스트 모음
-- API 라우터 테스트
-- 서비스 로직 테스트
+- `back/tests/` - pytest 테스트 모음 (44개)
+- Documents API 테스트 (15개)
+- Quizzes API 테스트 (15개)
+- URL Crawler 테스트 (12개)
 
 **검증/수정**:
 - `deepcopy`로 중첩 딕셔너리 테스트 격리 문제 해결
 
 ---
 
-### 9. Claude Code Review 통합 (PR #2~)
+### 9. URL 크롤링 기능 (PR #23)
 
-**프롬프트 의도**: AI 코드 리뷰 자동화
+**프롬프트 의도**: URL 입력으로 자료 등록
 
 ```
-GitHub Actions에 Claude Code Review를 추가해서
-PR마다 자동으로 코드 리뷰를 받을 수 있게 해줘.
+URL을 입력하면 웹 페이지에서 본문을 자동 추출해서
+문서로 등록하는 기능을 추가해줘.
+보안을 위해 SSRF 방지도 구현해줘.
 ```
 
 **결과**:
-- `.github/workflows/claude-code-review.yml`
-- PR 생성 시 자동 리뷰 코멘트
-- 점수 (8.5/10) 및 개선 제안
+- `back/app/services/url_crawler.py` - trafilatura 기반 크롤러
+- SSRF 방지 (localhost, 내부 IP 차단)
+- 타임아웃 설정 (10초)
 
 **검증/수정**:
-- High Priority 피드백 우선 수정
-- 여러 라운드의 리뷰/수정 반복
+- 다양한 URL로 크롤링 테스트
+- 보안 테스트 (내부 IP 차단 확인)
+- trafilatura 2.0.0 호환성 수정 (PR #24)
+
+---
+
+### 10. Coolify 프로덕션 배포 (PR #25, #26, #27)
+
+**프롬프트 의도**: 프로덕션 환경 배포
+
+```
+Coolify로 배포했는데 Google 로그인하면 localhost로 리다이렉트돼.
+확인하고 수정해줘.
+```
+
+**문제 1**: Docker ports vs expose
+- Coolify는 리버스 프록시 사용 → `ports` 대신 `expose` 필요
+- PR #25: `docker-compose.yml` 수정
+
+**문제 2**: OAuth 콜백 origin 감지
+- 리버스 프록시 뒤에서 `request.url.origin`이 내부 주소 반환
+- PR #26: `getOrigin()` 함수 추가 (x-forwarded-host 헤더 확인)
+
+```typescript
+function getOrigin(request: Request): string {
+  // 1. 환경변수로 명시적 설정 (최우선)
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  // 2. 리버스 프록시 헤더 확인
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  if (forwardedHost) {
+    const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+  // 3. 기본값
+  return new URL(request.url).origin;
+}
+```
+
+**문제 3**: 404 프로필 페이지
+- Navbar에 `/profile` 링크가 있지만 페이지 미구현
+- PR #27: 프로필 링크 제거
+
+**검증/수정**:
+- Supabase Dashboard에서 Site URL, Redirect URLs 설정
+- CORS_ORIGINS에 프로덕션 도메인 추가
+- 실제 Google 로그인 테스트 완료
+
+---
+
+### 11. GitHub Actions CI/CD 파이프라인
+
+**프롬프트 의도**: 자동화된 품질 관리 체계 구축
+
+```
+GitHub Actions로 PR마다 자동으로 린트, 테스트, 빌드 체크하고,
+Claude Code Review로 AI 코드 리뷰도 받을 수 있게 해줘.
+```
+
+**결과 - 4개의 워크플로우**:
+
+#### 1. E2E 테스트 (`e2e.yml`)
+```yaml
+# PR 생성/업데이트 시 자동 실행
+- Backend pytest (44개 테스트)
+- Frontend Playwright E2E (32개 테스트)
+- Supabase 연동 테스트 (실제 DB 사용)
+```
+
+**실행 과정**:
+1. PR 생성 → GitHub Actions 트리거
+2. Backend 서버 시작 (uvicorn)
+3. Frontend 서버 시작 (next dev)
+4. pytest 실행 → Playwright 실행
+5. 결과 리포트 (pass/fail)
+
+#### 2. Claude Code Review (`claude-code-review.yml`)
+```yaml
+# PR 생성 시 AI 자동 리뷰
+- 코드 품질 점수 (0-10점)
+- High/Medium/Low Priority 피드백
+- 보안 취약점 검사
+- 코드 스타일 제안
+```
+
+**리뷰 예시**:
+```
+Score: 8.5/10
+
+High Priority:
+- waitForTimeout 대신 waitForLoadState 사용 권장
+
+Medium Priority:
+- 에러 핸들링 개선 필요
+- 타입 명시 권장
+```
+
+#### 3. Claude CLI (`claude.yml`)
+```yaml
+# 코드 수정 자동화
+- 린트 에러 자동 수정
+- 간단한 리팩토링
+```
+
+#### 4. 린트/빌드 체크
+```yaml
+# 기본 품질 검사
+- ESLint (프론트엔드)
+- ruff (백엔드)
+- TypeScript 빌드
+- Next.js 빌드
+```
+
+**검증/수정 사이클**:
+1. 코드 작성 → PR 생성
+2. CI 자동 실행 (테스트, 린트)
+3. Claude Code Review 피드백 확인
+4. High Priority 항목 수정
+5. 재푸시 → CI 재실행
+6. 모든 체크 통과 → 머지
+
+**실제 활용 사례 (PR #18)**:
+- Claude Review: "waitForTimeout은 flaky 테스트 유발"
+- 수정: waitForLoadState로 변경
+- 재리뷰: "개선됨, LGTM"
+- 머지 완료
 
 ---
 
@@ -245,29 +372,107 @@ waitForLoadState를 사용하라고 해서 수정해줘.
 
 ---
 
+### 4. trafilatura 호환성 (PR #24)
+
+**문제**: trafilatura 2.0.0에서 API 변경으로 크롤링 실패
+
+**프롬프트**:
+```
+URL 크롤링이 안 되는데 확인해줘.
+trafilatura 버전이 바뀌면서 뭔가 달라진 것 같아.
+```
+
+**해결**:
+- `use_config()` 함수로 설정 객체 생성
+- 타임아웃 설정 방식 변경
+- 디버깅 로깅 추가
+
+---
+
+### 5. OAuth 콜백 리다이렉트 (PR #26)
+
+**문제**: 프로덕션에서 OAuth 콜백이 `0.0.0.0:3000`으로 리다이렉트
+
+**프롬프트**:
+```
+지금 http://0.0.0.0:3000/dashboard# 로 가는데
+리버스 프록시 뒤에서 origin 감지가 안 되는 것 같아.
+```
+
+**해결**:
+- `x-forwarded-host`, `x-forwarded-proto` 헤더 확인
+- `NEXT_PUBLIC_SITE_URL` 환경변수 우선 사용
+- `.env.example` 업데이트
+
+---
+
 ## 프롬프트 작성 팁
 
 1. **명확한 목표 제시**: "~기능을 구현해줘"보다 "~기능을 구현하고, ~조건을 만족해야 해"
 2. **컨텍스트 공유**: 기존 코드 구조, 사용 중인 라이브러리 언급
 3. **검증 포인트 명시**: "테스트 방법", "확인해야 할 것" 함께 요청
 4. **반복적 개선**: 첫 결과에서 문제점 파악 → 추가 프롬프트로 수정
+5. **에러 메시지 공유**: 문제 발생 시 전체 에러 로그를 함께 제공
 
 ---
 
 ## 개발 통계
 
-- **총 PR 수**: 18개
-- **총 커밋 수**: 30+
-- **개발 기간**: 1일 (2025-12-21)
-- **AI 도움 비율**: ~90% (코드 생성, 리뷰, 버그 수정)
+| 항목 | 수치 |
+|------|------|
+| 총 PR 수 | 27개 |
+| 총 커밋 수 | 41개 |
+| Backend 테스트 | 44개 (pytest) |
+| E2E 테스트 | 32개 (Playwright) |
+| 개발 기간 | 3일 (2025-12-20 ~ 2025-12-22) |
+| AI 도움 비율 | ~95% (코드 생성, 리뷰, 버그 수정, 배포) |
 
 ---
 
 ## 결론
 
-바이브 코딩을 통해 단기간에 OAuth + LLM + DB CRUD + 테스트가 포함된
+바이브 코딩을 통해 단기간에 **OAuth + LLM + DB CRUD + 테스트 + 프로덕션 배포**가 포함된
 완성도 높은 웹 서비스를 구현할 수 있었습니다.
 
 핵심은 **"그냥 생성"이 아니라 "이해하고 검증하며 수정"**하는 것입니다.
-AI가 생성한 코드를 맹목적으로 사용하지 않고,
-테스트와 리뷰를 통해 품질을 확보하는 과정이 중요합니다.
+
+### 배운 점
+
+1. **AI는 초안 생성기**: 첫 결과물을 맹신하지 말고 반드시 검증
+2. **테스트가 품질 보증**: AI 생성 코드도 테스트로 검증해야 안심
+3. **에러는 학습 기회**: 에러 메시지를 AI에게 공유하면 빠른 해결
+4. **배포는 별개 문제**: 로컬에서 되던 게 프로덕션에서 안 될 수 있음
+5. **반복이 핵심**: 한 번에 완벽한 결과는 없음, 점진적 개선
+
+### 사용 도구
+
+| 도구 | 용도 | 활용 |
+|------|------|------|
+| **Claude Code CLI** | 코드 생성/수정 | 전체 기능 구현, 버그 수정, 리팩토링 |
+| **Claude Code Review** | PR 자동 리뷰 | 27개 PR 모두 AI 리뷰 적용 |
+| **GitHub Actions** | CI/CD 자동화 | E2E 테스트, 린트, 빌드 체크 |
+| **Playwright** | E2E 테스트 | 32개 테스트 시나리오 자동화 |
+| **pytest** | 유닛 테스트 | 44개 백엔드 테스트 |
+| **Coolify** | 프로덕션 배포 | Docker Compose + Traefik |
+
+### GitHub Actions 워크플로우 현황
+
+```
+.github/workflows/
+├── e2e.yml              # E2E + Unit Test (PR마다 실행)
+├── claude-code-review.yml  # AI 코드 리뷰 (PR마다 실행)
+└── claude.yml           # Claude CLI 자동화
+```
+
+**CI 파이프라인 흐름**:
+```
+PR 생성
+   │
+   ├─→ e2e.yml (pytest + playwright)
+   │      └─→ 테스트 통과/실패 표시
+   │
+   ├─→ claude-code-review.yml
+   │      └─→ 코드 리뷰 코멘트 작성
+   │
+   └─→ 모든 체크 통과 → 머지 가능
+```

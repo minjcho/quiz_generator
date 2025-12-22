@@ -1,8 +1,21 @@
 # Quiz Generator
 
+[![CI](https://github.com/minjcho/quiz_generator/actions/workflows/e2e.yml/badge.svg)](https://github.com/minjcho/quiz_generator/actions)
+
 AI 기반 자료 분석 퀴즈 생성/풀이 웹 애플리케이션
 
-학습 자료(텍스트/PDF/URL)를 업로드하면 AI가 자동으로 퀴즈를 생성하고, 풀이 후 정답/해설/근거를 제공합니다.
+학습 자료(텍스트/URL)를 업로드하면 AI가 자동으로 4지선다 퀴즈를 생성하고, 풀이 후 정답/해설/근거를 제공합니다.
+
+**GitHub**: https://github.com/minjcho/quiz_generator
+
+---
+
+## 데모
+
+- **배포 URL**: https://ai3.minjcho.site
+- **API Docs**: https://ai3_backend.minjcho.site/docs
+
+> 테스트 시 Google 로그인으로 바로 사용 가능합니다.
 
 ---
 
@@ -18,12 +31,13 @@ AI 기반 자료 분석 퀴즈 생성/풀이 웹 애플리케이션
 
 ### 가산점 항목
 
-- [x] **CI/CD**: GitHub Actions (claude.yml, claude-code-review.yml, e2e.yml)
-- [x] **테스트코드**: Backend Unit Test (pytest) + E2E (Playwright)
-- [x] **LangGraph Agent Framework**: 퀴즈 생성 에이전트 설계
-- [x] **Tailwind CSS**: v4 사용
-- [x] **Headless UI/Radix UI**: shadcn/ui (Radix 기반) 컴포넌트
-- [x] **TypeScript**: 프론트엔드 전체
+- [x] **배포**: Coolify (Docker Compose) - https://ai3.minjcho.site
+- [x] **CI/CD**: GitHub Actions (lint, test, build, e2e, claude-code-review)
+- [x] **테스트코드**: Backend Unit Test (pytest 44개) + E2E (Playwright 32개)
+- [x] **LangGraph Agent Framework**: 퀴즈 생성 에이전트 (생성→검증→재시도 워크플로우)
+- [x] **Tailwind CSS v4**: 최신 CSS 프레임워크
+- [x] **Radix UI**: shadcn/ui 컴포넌트 라이브러리
+- [x] **TypeScript**: 프론트엔드 전체 strict mode
 
 ---
 
@@ -284,19 +298,60 @@ quiz_generator/
 
 ## 테스트 실행
 
-### Backend Unit Tests
+### 전체 테스트
+
+```bash
+make test
+```
+
+### Backend Unit Tests (44개)
 
 ```bash
 cd back
-pytest
+pytest -v
 ```
 
-### E2E Tests (Playwright)
+- Documents API: 15개 (CRUD + 권한)
+- Quizzes API: 15개 (생성/제출/삭제)
+- URL Crawler: 12개 (크롤링 + SSRF 방지)
+- Health: 2개
+
+### E2E Tests (32개, Playwright)
 
 ```bash
 cd front
 npx playwright test
 ```
+
+- 인증 플로우 (로그인/로그아웃)
+- 문서 관리 (등록/삭제)
+- 퀴즈 생성 (LLM 호출)
+- 퀴즈 풀이/제출/결과 확인
+
+---
+
+## 스크린샷
+
+### 로그인 페이지
+Google OAuth 또는 이메일로 로그인
+
+### 대시보드
+문서/퀴즈 통계 및 빠른 액션
+
+### 퀴즈 풀이
+문제별 선택지, 진행률 표시, 네비게이션
+
+### 결과 확인
+정답/오답, 해설, 출처 근거 표시
+
+---
+
+## 개발자
+
+- **이름**: 조민재
+- **GitHub**: [@minjcho](https://github.com/minjcho)
+- **개발 기간**: 2025-12-21 ~ 2025-12-22 (2일)
+- **AI 도구**: Claude Code (바이브 코딩)
 
 ---
 
