@@ -2,6 +2,7 @@
 LangGraph 기반 퀴즈 생성 에이전트
 """
 import json
+import logging
 from typing import TypedDict
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -10,6 +11,8 @@ from langgraph.graph import END, StateGraph
 
 from app.core.config import settings
 from app.schemas.quiz import Difficulty, LLMQuizOutput, QuestionSchema
+
+logger = logging.getLogger(__name__)
 
 
 class QuizState(TypedDict):
@@ -32,6 +35,12 @@ def get_llm():
 
 async def generate_quiz_with_llm(state: QuizState) -> QuizState:
     """LLM을 사용하여 퀴즈 생성"""
+    logger.info("=== 퀴즈 생성 시작 ===")
+    logger.info(f"문서 ID: {state['document_id']}")
+    logger.info(f"문서 길이: {len(state['document_content'])}자")
+    logger.debug(f"문서 미리보기: {state['document_content'][:300]}...")
+    logger.info(f"난이도: {state['difficulty']}, 문제 수: {state['question_count']}")
+
     llm = get_llm()
 
     difficulty_map = {
@@ -72,16 +81,30 @@ async def generate_quiz_with_llm(state: QuizState) -> QuizState:
 {state['document_content'][:30000]}
 ---"""
 
+    content = None  # 에러 핸들러에서 사용하기 위해 초기화
     try:
+        logger.info("LLM 호출 중...")
         response = await llm.ainvoke(
             [
                 SystemMessage(content=system_prompt),
                 HumanMessage(content=user_prompt),
             ]
         )
+        logger.info(f"LLM 응답 수신 완료. 응답 타입: {type(response)}")
+
+        # 응답 내용 확인
+        content = response.content
+        if not content:
+            logger.error(f"LLM 응답이 비어있습니다! response 객체: {response}")
+            state["error"] = "LLM이 빈 응답을 반환했습니다. 콘텐츠 필터링 또는 API 오류일 수 있습니다."
+            state["retry_count"] = state.get("retry_count", 0) + 1
+            return state
+
+        logger.info(f"LLM 응답 길이: {len(content)}자")
+        logger.debug(f"LLM 응답 미리보기: {content[:200]}...")
 
         # JSON 파싱
-        content = response.content.strip()
+        content = content.strip()
 
         # 마크다운 코드 블록 제거
         if "```json" in content:
@@ -94,9 +117,12 @@ async def generate_quiz_with_llm(state: QuizState) -> QuizState:
         state["error"] = None
 
     except json.JSONDecodeError as e:
+        logger.error(f"JSON 파싱 오류: {e}")
+        logger.error(f"파싱 시도한 content: {content[:500] if content else 'None'}...")
         state["error"] = f"JSON 파싱 오류: {str(e)}"
         state["retry_count"] = state.get("retry_count", 0) + 1
     except Exception as e:
+        logger.error(f"예외 발생: {type(e).__name__}: {e}")
         state["error"] = str(e)
         state["retry_count"] = state.get("retry_count", 0) + 1
 
