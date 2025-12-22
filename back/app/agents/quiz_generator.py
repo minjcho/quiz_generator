@@ -38,7 +38,7 @@ async def generate_quiz_with_llm(state: QuizState) -> QuizState:
     logger.info("=== 퀴즈 생성 시작 ===")
     logger.info(f"문서 ID: {state['document_id']}")
     logger.info(f"문서 길이: {len(state['document_content'])}자")
-    logger.info(f"문서 미리보기: {state['document_content'][:300]}...")
+    logger.debug(f"문서 미리보기: {state['document_content'][:300]}...")
     logger.info(f"난이도: {state['difficulty']}, 문제 수: {state['question_count']}")
 
     llm = get_llm()
@@ -100,7 +100,7 @@ async def generate_quiz_with_llm(state: QuizState) -> QuizState:
             return state
 
         logger.info(f"LLM 응답 길이: {len(content)}자")
-        logger.info(f"LLM 응답 미리보기: {content[:200]}...")
+        logger.debug(f"LLM 응답 미리보기: {content[:200]}...")
 
         # JSON 파싱
         content = content.strip()

@@ -3,6 +3,10 @@
 from urllib.parse import urlparse
 
 import trafilatura
+from trafilatura.settings import use_config
+
+# 타임아웃 설정 (초)
+DOWNLOAD_TIMEOUT = "10"
 
 # SSRF 방지를 위한 차단 목록
 BLOCKED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
@@ -62,9 +66,10 @@ class UrlCrawlerService:
         # URL 보안 검증
         self._validate_url(url)
 
-        # URL에서 HTML 다운로드
-        # trafilatura 2.0.0에서는 fetch_url에 timeout 직접 지원 안함
-        downloaded = trafilatura.fetch_url(url)
+        # URL에서 HTML 다운로드 (타임아웃 설정)
+        config = use_config()
+        config.set("DEFAULT", "DOWNLOAD_TIMEOUT", DOWNLOAD_TIMEOUT)
+        downloaded = trafilatura.fetch_url(url, config=config)
 
         if not downloaded:
             raise ValueError(f"URL에 접근할 수 없습니다: {url}")
