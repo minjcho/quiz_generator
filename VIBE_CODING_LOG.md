@@ -8,6 +8,7 @@
 
 - **Claude Code** (CLI 기반 AI 코딩 어시스턴트)
 - **Claude Code Review** (GitHub Actions 통합 PR 리뷰)
+- **Supabase MCP** (Model Context Protocol - DB/Auth 설정 조회 및 관리)
 
 ---
 
@@ -250,7 +251,38 @@ function getOrigin(request: Request): string {
 
 ---
 
-### 11. GitHub Actions CI/CD 파이프라인
+### 11. Supabase MCP 활용
+
+**프롬프트 의도**: Supabase 설정을 CLI에서 직접 조회/관리
+
+```
+프로덕션에서 Google 로그인이 localhost로 리다이렉트돼.
+Supabase MCP로 설정 확인해줘.
+```
+
+**MCP (Model Context Protocol)란?**
+- Claude Code가 외부 서비스 API에 직접 접근할 수 있게 해주는 프로토콜
+- Supabase MCP: Auth 설정, DB 스키마, Storage 등을 CLI에서 조회/관리
+
+**MCP로 확인한 내용**:
+```
+site_url: http://ai3.minjcho.site  ← HTTP! HTTPS 필요
+uri_allow_list: []  ← 콜백 URL 없음!
+```
+
+**활용 사례**:
+1. OAuth 리다이렉트 문제 디버깅 - Site URL이 HTTP로 설정된 것 발견
+2. Redirect URLs 목록 조회 - 콜백 URL 누락 확인
+3. 프로덕션 설정 검증 - 배포 전 설정 확인
+
+**장점**:
+- Supabase Dashboard 없이 CLI에서 바로 설정 확인
+- 문제 원인을 빠르게 파악
+- AI가 설정값을 보고 직접 해결책 제시
+
+---
+
+### 12. GitHub Actions CI/CD 파이프라인
 
 **프롬프트 의도**: 자동화된 품질 관리 체계 구축
 
@@ -450,6 +482,7 @@ trafilatura 버전이 바뀌면서 뭔가 달라진 것 같아.
 |------|------|------|
 | **Claude Code CLI** | 코드 생성/수정 | 전체 기능 구현, 버그 수정, 리팩토링 |
 | **Claude Code Review** | PR 자동 리뷰 | 27개 PR 모두 AI 리뷰 적용 |
+| **Supabase MCP** | DB/Auth 설정 조회 | OAuth 문제 디버깅, 설정 검증 |
 | **GitHub Actions** | CI/CD 자동화 | E2E 테스트, 린트, 빌드 체크 |
 | **Playwright** | E2E 테스트 | 32개 테스트 시나리오 자동화 |
 | **pytest** | 유닛 테스트 | 44개 백엔드 테스트 |
