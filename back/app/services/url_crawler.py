@@ -5,8 +5,8 @@ from urllib.parse import urlparse
 import trafilatura
 from trafilatura.settings import use_config
 
-# 타임아웃 설정 (초)
-DOWNLOAD_TIMEOUT = "10"
+# 타임아웃 설정 (초) - configparser는 문자열 사용
+DOWNLOAD_TIMEOUT = 10
 
 # SSRF 방지를 위한 차단 목록
 BLOCKED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
@@ -68,7 +68,7 @@ class UrlCrawlerService:
 
         # URL에서 HTML 다운로드 (타임아웃 설정)
         config = use_config()
-        config.set("DEFAULT", "DOWNLOAD_TIMEOUT", DOWNLOAD_TIMEOUT)
+        config.set("DEFAULT", "DOWNLOAD_TIMEOUT", str(DOWNLOAD_TIMEOUT))
         downloaded = trafilatura.fetch_url(url, config=config)
 
         if not downloaded:

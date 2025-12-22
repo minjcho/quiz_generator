@@ -81,6 +81,7 @@ async def generate_quiz_with_llm(state: QuizState) -> QuizState:
 {state['document_content'][:30000]}
 ---"""
 
+    content = None  # 에러 핸들러에서 사용하기 위해 초기화
     try:
         logger.info("LLM 호출 중...")
         response = await llm.ainvoke(
